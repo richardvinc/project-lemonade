@@ -5,22 +5,129 @@
         <title>Project Lemonade</title>
         <link href="style.css" rel="stylesheet" />
     </head>
-    <body>
-        <div class="relative h-screen w-full overflow-hidden bg-white">
-            <canvas id="three-canvas" class="block h-full w-full"></canvas>
+    <body class="m-0 p-0 overflow-hidden bg-slate-100 select-none font-sans">
+        <div
+            id="canvas-container"
+            class="absolute top-0 left-0 h-screen w-[calc(100vw-120px)]"
+        ></div>
 
+        <div
+            id="ui-panel"
+            class="absolute top-0 right-0 w-[120px] h-screen bg-white/95 border-l border-slate-200 flex flex-col items-center py-5 gap-4 shadow-xl z-10"
+        >
             <div
-                id="rotation-ui"
-                class="absolute bottom-5 right-5 z-10 flex flex-col gap-2 rounded-lg bg-black/70 p-4 font-mono text-sm text-white shadow-lg pointer-events-none"
+                class="flex flex-col items-center w-full border-b border-slate-100 pb-4 px-2"
             >
-                <!-- Action Button -->
+                <span
+                    class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"
+                    >Mode</span
+                >
                 <button
                     type="button"
-                    id="toggle-cam-btn"
-                    class="mt-2 rounded bg-emerald-500 px-3 py-1.5 font-sans font-bold text-white transition-colors hover:bg-emerald-600 active:bg-emerald-700 pointer-events-auto cursor-pointer"
+                    id="mode-toggle"
+                    class="w-full py-2 px-1 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold shadow-sm transition-all duration-200"
                 >
-                    Stop Animation
+                    Rotate Model
                 </button>
+            </div>
+
+            <div
+                class="flex flex-col items-center w-full grow overflow-y-auto border-b border-slate-100 pb-4 px-2"
+            >
+                <span
+                    class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"
+                    >Eye Type</span
+                >
+
+                <button
+                    type="button"
+                    id="btn-round"
+                    class="item-btn active w-14 h-14 my-1 border-2 border-blue-500 bg-blue-50 rounded-full flex items-center justify-center transition-all hover:scale-105"
+                    onclick="changeEyeType('round', this)"
+                >
+                    <svg class="w-10 h-10" viewBox="0 0 100 100">
+                        <title>...</title>
+                        <circle cx="35" cy="50" r="12" fill="black" />
+                        <circle cx="65" cy="50" r="12" fill="black" />
+                    </svg>
+                </button>
+
+                <button
+                    type="button"
+                    id="btn-tall"
+                    class="item-btn w-14 h-14 my-1 border-2 border-slate-200 bg-white rounded-full flex items-center justify-center transition-all hover:scale-105 hover:border-slate-400"
+                    onclick="changeEyeType('tall', this)"
+                >
+                    <svg class="w-10 h-10" viewBox="0 0 100 100">
+                        <title>...</title>
+                        <ellipse cx="35" cy="50" rx="8" ry="16" fill="black" />
+                        <ellipse cx="65" cy="50" rx="8" ry="16" fill="black" />
+                    </svg>
+                </button>
+
+                <button
+                    type="button"
+                    id="btn-happy"
+                    class="item-btn w-14 h-14 my-1 border-2 border-slate-200 bg-white rounded-full flex items-center justify-center transition-all hover:scale-105 hover:border-slate-400"
+                    onclick="changeEyeType('happy', this)"
+                >
+                    <svg class="w-10 h-10" viewBox="0 0 100 100">
+                        <title>...</title>
+                        <path
+                            d="M20,55 Q35,30 50,55 M50,55 Q65,30 80,55"
+                            fill="none"
+                            stroke="black"
+                            stroke-width="8"
+                            stroke-linecap="round"
+                        />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="flex flex-col items-center w-full pb-4 px-2 gap-3">
+                <span
+                    class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"
+                    >Adjust</span
+                >
+
+                <div class="w-full flex flex-col text-xs text-slate-600">
+                    <label class="font-medium mb-1">Size</label>
+                    <input
+                        type="range"
+                        id="eye-scale"
+                        min="0.5"
+                        max="2.0"
+                        step="0.1"
+                        value="1.0"
+                        class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                </div>
+
+                <div class="w-full flex flex-col text-xs text-slate-600">
+                    <label class="font-medium mb-1">Height (Y)</label>
+                    <input
+                        type="range"
+                        id="eye-y"
+                        min="-0.6"
+                        max="0.6"
+                        step="0.05"
+                        value="0.1"
+                        class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                </div>
+
+                <div class="w-full flex flex-col text-xs text-slate-600">
+                    <label class="font-medium mb-1">Eye Gap</label>
+                    <input
+                        type="range"
+                        id="eye-gap"
+                        min="0.15"
+                        max="0.6"
+                        step="0.02"
+                        value="0.35"
+                        class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                </div>
             </div>
         </div>
         <script type="module" src="/main.js"></script>

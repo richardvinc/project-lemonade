@@ -1,146 +1,233 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
-import { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
-import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { OBJLoader } from "three/examples/jsm/Addons.js";
+import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
-// state variables
-let isAnimating = true;
-const orbitRadius = 5;
-const cameraHeight = 0;
-const orbitSpeed = 0.3;
-
-// HTML element
-const canvas = document.getElementById("three-canvas");
-const toggleBtn = document.getElementById("toggle-cam-btn");
-
-const clock = new THREE.Clock();
+// --- 1. SETUP THREE.JS SCENE ---
+const container = document.getElementById("canvas-container");
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf1f5f9);
 
-// setup camera
 const camera = new THREE.PerspectiveCamera(
-  75,
-  canvas.clientWidth / canvas.clientHeight,
+  45,
+  (window.innerWidth - 120) / window.innerHeight,
   0.1,
-  1000,
+  100,
 );
-camera.position.z = 3;
+camera.position.set(0, 0, 5);
 
-// setup lights
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth - 120, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+container.appendChild(renderer.domElement);
+
+// --- 2. LIGHTING ---
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
 scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
-scene.add(directionalLight);
 
-// setup renderer
-const renderer = new THREE.WebGLRenderer({
-  canvas,
-  antialias: true,
-  alpha: true,
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(5, 5, 4);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+// --- 3. CREATE CHARACTER ROOT & LOAD OBJ ---
+const characterGroup = new THREE.Group();
+scene.add(characterGroup);
+
+const lemonMaterial = new THREE.MeshStandardMaterial({
+  color: 0xffe135,
+  roughness: 0.3,
+  metalness: 0.1,
 });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 
-// setup composer to render outline pass for selected object
-const composer = new EffectComposer(renderer);
-const renderPass = new RenderPass(scene, camera);
-composer.addPass(renderPass);
-const outlinePass = new OutlinePass(
-  new THREE.Vector2(window.innerWidth, window.innerHeight),
-  scene,
-  camera,
-);
-outlinePass.edgeThickness = 1.0; // Thickness of the line
-outlinePass.edgeStrength = 10.0; // Crispness/opacity
-outlinePass.visibleEdgeColor.set("#000000"); // Ink color
-outlinePass.hiddenEdgeColor.set("#000000"); // Outline even if blocked by objects
-
-composer.addPass(outlinePass);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 0, 0); // Always orbit around the center object
-controls.enableDamping = true; // Adds a smooth weight/inertia when dragging
-// Calculate the fixed pitch angle based on your preset height and radius
-// to restricts the camera to ONLY rotate around the X and Z axes when dragged
-const fixedPolarAngle = Math.atan2(orbitRadius, cameraHeight);
-controls.minPolarAngle = fixedPolarAngle;
-controls.maxPolarAngle = fixedPolarAngle;
-controls.enabled = true;
-
-// load lemon object + add toon material so it looks cartoonish
-const toonMaterial = new THREE.MeshToonMaterial({ color: 0xffe462 });
-// let lemonModel;
+// Instantiate OBJLoader
 const loader = new OBJLoader();
-loader.load("public/lemon.obj", (obj) => {
-  obj.traverse((child) => {
-    if (child.isMesh) {
-      child.material = toonMaterial;
-    }
-  });
 
-  obj.rotateX(30);
-  // obj.rotateZ(30);
-  scene.add(obj);
-  outlinePass.selectedObjects = [obj];
-  // lemonModel = obj;
-});
+const objPath = "public/lemon.obj";
 
+let lemonModel = null;
+loader.load(
+  objPath,
+  (obj) => {
+    // Apply our yellow lemon material to loaded meshes
+    obj.traverse((child) => {
+      if (child.isMesh) {
+        child.material = lemonMaterial;
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
+    obj.rotateX(30);
+    lemonModel = obj;
+
+    characterGroup.add(obj);
+    console.log("Lemon OBJ loaded successfully!");
+  },
+  (xhr) => {},
+  (error) => {
+    console.warn("An error occurred loading the OBJ. Using fallbacks.", error);
+
+    // Fallback basic cylinder/sphere placeholder so app functions if file is missing
+    const fallbackGeo = new THREE.SphereGeometry(1, 32, 32);
+    fallbackGeo.scale(1, 1, 1);
+    const fallbackMesh = new THREE.Mesh(fallbackGeo, lemonMaterial);
+    characterGroup.add(fallbackMesh);
+  },
+);
 const axesHelper = new THREE.AxesHelper(5);
-scene.add(axesHelper);
-/**
- * Functions region
- */
-function resizeRenderer() {
-  const width = canvas.clientWidth;
-  const height = canvas.clientHeight;
+if (lemonModel) lemonModel.add(axesHelper);
 
-  const needsResize =
-    canvas.width !== width * renderer.getPixelRatio() ||
-    canvas.height !== height * renderer.getPixelRatio();
+// --- 4. EYES MANAGEMENT ---
+const eyeGroup = new THREE.Group();
+// Shift forward relative to your asset geometry profile depth boundary
+eyeGroup.position.set(0, 0.1, 1.1);
+characterGroup.add(eyeGroup);
 
-  if (needsResize) {
-    renderer.setSize(width, height, false);
+const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
+let leftEyeMesh, rightEyeMesh;
+let currentType = "round";
+let currentGap = 0.35;
 
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
+function createEyes(type) {
+  currentType = type;
+  if (leftEyeMesh) eyeGroup.remove(leftEyeMesh);
+  if (rightEyeMesh) eyeGroup.remove(rightEyeMesh);
+
+  let eyeGeo;
+
+  if (type === "round") {
+    eyeGeo = new THREE.SphereGeometry(0.12, 16, 16);
+    eyeGeo.scale(1, 1, 0.3);
+  } else if (type === "tall") {
+    eyeGeo = new THREE.SphereGeometry(0.08, 16, 16);
+    eyeGeo.scale(1, 2, 0.4);
+  } else if (type === "happy") {
+    eyeGeo = new THREE.TorusGeometry(0.1, 0.025, 8, 16, Math.PI);
   }
+
+  leftEyeMesh = new THREE.Mesh(eyeGeo, eyeMaterial);
+  rightEyeMesh = new THREE.Mesh(eyeGeo, eyeMaterial);
+
+  // You might need to change these offsets slightly depending on your OBJ size
+  leftEyeMesh.position.x = -0.35;
+  rightEyeMesh.position.x = 0.35;
+
+  leftEyeMesh.rotation.y = 0.2;
+  rightEyeMesh.rotation.y = -0.2;
+
+  // Apply current gap transformations
+  applyEyeGap();
+
+  eyeGroup.add(leftEyeMesh);
+  eyeGroup.add(rightEyeMesh);
 }
 
+function applyEyeGap() {
+  if (!leftEyeMesh || !rightEyeMesh) return;
+
+  leftEyeMesh.position.x = -currentGap;
+  rightEyeMesh.position.x = currentGap;
+
+  // Make the eyes subtle conform to the round face profile as they widen
+  leftEyeMesh.rotation.y = currentGap * 0.57;
+  rightEyeMesh.rotation.y = -currentGap * 0.57;
+}
+
+createEyes("round");
+
+// --- 5. INTERACTION & EVENT LISTENERS ---
+let isDragging = false;
+let previousMousePosition = { x: 0, y: 0 };
+let controlMode = "model";
+
+function updateEyeUI(type, element) {
+  createEyes(type);
+  document.querySelectorAll(".item-btn").forEach((btn) => {
+    btn.className =
+      "item-btn w-14 h-14 my-1 border-2 border-slate-200 bg-white rounded-full flex items-center justify-center transition-all hover:scale-105 hover:border-slate-400";
+  });
+  element.className =
+    "item-btn w-14 h-14 my-1 border-2 border-blue-500 bg-blue-50 rounded-full flex items-center justify-center transition-all hover:scale-105";
+}
+
+document
+  .getElementById("btn-round")
+  .addEventListener("click", (e) => updateEyeUI("round", e.currentTarget));
+document
+  .getElementById("btn-tall")
+  .addEventListener("click", (e) => updateEyeUI("tall", e.currentTarget));
+document
+  .getElementById("btn-happy")
+  .addEventListener("click", (e) => updateEyeUI("happy", e.currentTarget));
+
+const modeToggle = document.getElementById("mode-toggle");
+modeToggle.addEventListener("click", () => {
+  if (controlMode === "model") {
+    controlMode = "camera";
+    modeToggle.textContent = "Rotate Camera";
+    modeToggle.className =
+      "w-full py-2 px-1 bg-green-500 hover:bg-green-600 text-white rounded-full text-xs font-bold shadow-sm transition-all duration-200";
+  } else {
+    controlMode = "model";
+    modeToggle.textContent = "Rotate Model";
+    modeToggle.className =
+      "w-full py-2 px-1 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold shadow-sm transition-all duration-200";
+  }
+});
+
+document.getElementById("eye-scale").addEventListener("input", (e) => {
+  const val = parseFloat(e.target.value);
+  eyeGroup.scale.set(val, val, val);
+});
+
+document.getElementById("eye-y").addEventListener("input", (e) => {
+  eyeGroup.position.y = parseFloat(e.target.value);
+});
+
+document.getElementById("eye-gap").addEventListener("input", (e) => {
+  currentGap = parseFloat(e.target.value);
+  applyEyeGap();
+});
+
+container.addEventListener("mousedown", (e) => {
+  isDragging = true;
+  previousMousePosition = { x: e.clientX, y: e.clientY };
+});
+
+window.addEventListener("mouseup", () => (isDragging = false));
+
+container.addEventListener("mousemove", (e) => {
+  if (!isDragging) return;
+
+  const deltaX = e.clientX - previousMousePosition.x;
+  const speed = 0.007;
+
+  if (controlMode === "model") {
+    characterGroup.rotation.y += deltaX * speed;
+  } else if (controlMode === "camera") {
+    const radius = 5;
+    let theta = Math.atan2(camera.position.x, camera.position.z);
+    theta -= deltaX * speed;
+
+    camera.position.x = radius * Math.sin(theta);
+    camera.position.z = radius * Math.cos(theta);
+    camera.lookAt(0, 0, 0);
+  }
+
+  previousMousePosition = { x: e.clientX, y: e.clientY };
+});
+
+window.addEventListener("resize", () => {
+  const width = window.innerWidth - 120;
+  const height = window.innerHeight;
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+});
+
+// --- 6. ANIMATION LOOP ---
 function animate() {
   requestAnimationFrame(animate);
-  resizeRenderer();
-
-  if (isAnimating) {
-    // AUTOMATIC MODE: Drive camera position using math
-    const elapsedTime = clock.getElapsedTime();
-    camera.position.x = Math.cos(elapsedTime * orbitSpeed) * orbitRadius;
-    camera.position.z = Math.sin(elapsedTime * orbitSpeed) * orbitRadius;
-    camera.position.y = cameraHeight;
-    camera.lookAt(0, 0, 0);
-  } else {
-    // MANUAL MODE: Let OrbitControls take over and handle the dragging
-    controls.update();
-  }
-  composer.render(scene, camera);
+  renderer.render(scene, camera);
 }
 animate();
-
-// register event listeners
-toggleBtn.addEventListener("click", () => {
-  isAnimating = !isAnimating;
-
-  if (isAnimating) {
-    toggleBtn.innerText = "Stop Animation";
-    // Swap Tailwind colors
-    toggleBtn.classList.remove("bg-red-500", "hover:bg-red-600");
-    toggleBtn.classList.add("bg-emerald-500", "hover:bg-emerald-600");
-    controls.enabled = false;
-  } else {
-    toggleBtn.innerText = "Start Animation";
-    // Swap Tailwind colors
-    toggleBtn.classList.remove("bg-emerald-500", "hover:bg-emerald-600");
-    toggleBtn.classList.add("bg-red-500", "hover:bg-red-600");
-    controls.enabled = true;
-  }
-});
