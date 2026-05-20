@@ -403,7 +403,7 @@ let copyrightText;
 async function initCopyrightText() {
   await loadFonts();
 
-  copyrightText = createTextPlane(`Project Lemonade by Manoosia.id`);
+  copyrightText = createTextPlane(`Project Lemonade`);
   scene.add(copyrightText);
 
   positionCopyrightText();
