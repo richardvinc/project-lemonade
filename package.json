@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "start": "npx vite"
+    "start": "npx vite --host"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",

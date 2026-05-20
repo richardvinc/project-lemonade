@@ -4,129 +4,136 @@
         <meta charset="utf-8" />
         <title>Project Lemonade</title>
         <link href="style.css" rel="stylesheet" />
+        <!-- Essential for correct mobile scaling -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     </head>
-    <body class="m-0 p-0 overflow-hidden bg-slate-100 select-none font-sans">
+    <body class="m-0 h-screen w-screen overflow-hidden bg-slate-100">
         <div
-            id="canvas-container"
-            class="absolute top-0 left-0 h-screen w-[calc(100vw-120px)]"
-        ></div>
-
-        <div
-            id="ui-panel"
-            class="absolute top-0 right-0 w-[120px] h-screen bg-white/95 border-l border-slate-200 flex flex-col items-center py-5 gap-4 shadow-xl z-10"
+            class="grid h-screen w-screen grid-rows-[60vh_40vh] md:grid-rows-1 md:grid-cols-[1fr_200px]"
         >
+            <div id="canvas-container" class="min-h-0 min-w-0"></div>
+
+            <!-- UI Panel: Bottom drawer on mobile, Sidebar on desktop -->
             <div
-                class="flex flex-col items-center w-full border-b border-slate-100 pb-4 px-2"
+                id="ui-panel"
+                class="min-h-0 overflow-x-auto bg-white/95 border-t md:border-t-0 md:border-l border-slate-200 flex flex-row md:flex-col"
             >
-                <span
-                    class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"
-                    >Mode</span
+                <!-- Eye Grid Block -->
+                <div
+                    class="flex flex-col items-center min-w-[100px] md:w-full md:flex-grow overflow-y-auto border-r md:border-r-0 md:border-b border-slate-100 pr-4 md:pr-0 md:pb-4 md:px-2"
                 >
-                <button
-                    type="button"
-                    id="mode-toggle"
-                    class="w-full py-2 px-1 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold shadow-sm transition-all duration-200"
-                >
-                    Rotate Model
-                </button>
-            </div>
-
-            <div
-                class="flex flex-col items-center w-full grow overflow-y-auto border-b border-slate-100 pb-4 px-2"
-            >
-                <span
-                    class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"
-                    >Eye Type</span
-                >
-
-                <button
-                    type="button"
-                    id="btn-round"
-                    class="item-btn active w-14 h-14 my-1 border-2 border-blue-500 bg-blue-50 rounded-full flex items-center justify-center transition-all hover:scale-105"
-                    onclick="changeEyeType('round', this)"
-                >
-                    <svg class="w-10 h-10" viewBox="0 0 100 100">
-                        <title>...</title>
-                        <circle cx="35" cy="50" r="12" fill="black" />
-                        <circle cx="65" cy="50" r="12" fill="black" />
-                    </svg>
-                </button>
-
-                <button
-                    type="button"
-                    id="btn-tall"
-                    class="item-btn w-14 h-14 my-1 border-2 border-slate-200 bg-white rounded-full flex items-center justify-center transition-all hover:scale-105 hover:border-slate-400"
-                    onclick="changeEyeType('tall', this)"
-                >
-                    <svg class="w-10 h-10" viewBox="0 0 100 100">
-                        <title>...</title>
-                        <ellipse cx="35" cy="50" rx="8" ry="16" fill="black" />
-                        <ellipse cx="65" cy="50" rx="8" ry="16" fill="black" />
-                    </svg>
-                </button>
-
-                <button
-                    type="button"
-                    id="btn-happy"
-                    class="item-btn w-14 h-14 my-1 border-2 border-slate-200 bg-white rounded-full flex items-center justify-center transition-all hover:scale-105 hover:border-slate-400"
-                    onclick="changeEyeType('happy', this)"
-                >
-                    <svg class="w-10 h-10" viewBox="0 0 100 100">
-                        <title>...</title>
-                        <path
-                            d="M20,55 Q35,30 50,55 M50,55 Q65,30 80,55"
-                            fill="none"
-                            stroke="black"
-                            stroke-width="8"
-                            stroke-linecap="round"
-                        />
-                    </svg>
-                </button>
-            </div>
-
-            <div class="flex flex-col items-center w-full pb-4 px-2 gap-3">
-                <span
-                    class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"
-                    >Adjust</span
-                >
-
-                <div class="w-full flex flex-col text-xs text-slate-600">
-                    <label class="font-medium mb-1">Size</label>
-                    <input
-                        type="range"
-                        id="eye-scale"
-                        min="0.5"
-                        max="2.0"
-                        step="0.1"
-                        value="1.0"
-                        class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                    />
+                    <span
+                        class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 sticky top-0 bg-white/95 w-full text-center"
+                        >Eye Files</span
+                    >
+                    <div
+                        id="eye-grid"
+                        class="grid grid-cols-2 gap-2 w-full px-1"
+                    >
+                        <!-- Buttons are injected here dynamically by JavaScript -->
+                    </div>
                 </div>
 
-                <div class="w-full flex flex-col text-xs text-slate-600">
-                    <label class="font-medium mb-1">Height (Y)</label>
-                    <input
-                        type="range"
-                        id="eye-y"
-                        min="-0.6"
-                        max="0.6"
-                        step="0.05"
-                        value="0.1"
-                        class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                    />
+                <!-- Mouth Grid Block -->
+                <div
+                    class="flex flex-col items-center min-w-[100px] md:w-full md:flex-grow overflow-y-auto border-r md:border-r-0 md:border-b border-slate-100 pr-4 md:pr-0 md:pb-4 md:px-2"
+                >
+                    <span
+                        class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 sticky top-0 bg-white/95 w-full text-center"
+                        >Mouth Files</span
+                    >
+                    <div
+                        id="mouth-grid"
+                        class="grid grid-cols-2 gap-2 w-full px-1"
+                    >
+                        <!-- Buttons are injected here dynamically by JavaScript -->
+                    </div>
                 </div>
 
-                <div class="w-full flex flex-col text-xs text-slate-600">
-                    <label class="font-medium mb-1">Eye Gap</label>
-                    <input
-                        type="range"
-                        id="eye-gap"
-                        min="0.15"
-                        max="0.6"
-                        step="0.02"
-                        value="0.35"
-                        class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                    />
+                <div class="pb-2 px-2 text-center">
+                    <span
+                        class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"
+                        >Adjustment</span
+                    >
+                    <!-- Slider Block: Adjust Eyes -->
+                    <div
+                        class="flex flex-col border border-slate-200 items-center min-w-[120px] md:w-full md:pb-4 md:px-2 gap-3 justify-center md:justify-start"
+                    >
+                        <span
+                            class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"
+                            >Adjust Eyes</span
+                        >
+
+                        <div
+                            class="w-full flex flex-col text-xs text-slate-600"
+                        >
+                            <label class="font-medium mb-1">Size</label>
+                            <input
+                                type="range"
+                                id="eye-scale"
+                                min="0.5"
+                                max="2.0"
+                                step="0.1"
+                                value="1.0"
+                                class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                            />
+                        </div>
+
+                        <div
+                            class="w-full flex flex-col text-xs text-slate-600"
+                        >
+                            <label class="font-medium mb-1">Height (Y)</label>
+                            <input
+                                type="range"
+                                id="eye-y"
+                                min="-0.6"
+                                max="0.6"
+                                step="0.05"
+                                value="0.1"
+                                class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Slider Block: Adjust Mouth -->
+                    <div
+                        class="mt-2 flex flex-col border border-slate-200 items-center min-w-[120px] md:w-full md:pb-4 md:px-2 gap-3 justify-center md:justify-start"
+                    >
+                        <span
+                            class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"
+                            >Adjust Mouth</span
+                        >
+
+                        <div
+                            class="w-full flex flex-col text-xs text-slate-600"
+                        >
+                            <label class="font-medium mb-1">Size</label>
+                            <input
+                                type="range"
+                                id="mouth-scale"
+                                min="0.2"
+                                max="2"
+                                step="0.1"
+                                value="1"
+                                class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                            />
+                        </div>
+
+                        <div
+                            class="w-full flex flex-col text-xs text-slate-600"
+                        >
+                            <label class="font-medium mb-1">Height (Y)</label>
+                            <input
+                                type="range"
+                                id="mouth-y"
+                                min="-0.6"
+                                max="0.6"
+                                step="0.05"
+                                value="-0.25"
+                                class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
