@@ -50,7 +50,7 @@ const mouthImages = [
 // --- SETUP THREE.JS SCENE ---
 const container = document.getElementById("canvas-container");
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xf1f5f9);
+scene.background = new THREE.Color("#fff8d2");
 const width = container.clientWidth;
 const height = container.clientHeight;
 
@@ -60,6 +60,7 @@ camera.position.set(0, 0, 5);
 const renderer = new THREE.WebGLRenderer({
   antialias: true,
   preserveDrawingBuffer: true,
+  alpha: true,
 });
 renderer.setSize(container.clientWidth, container.clientHeight, false);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -72,12 +73,14 @@ const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 const outlinePass = new OutlinePass(
-  new THREE.Vector2(container.innerWidth, container.innerHeight),
+  new THREE.Vector2(container.clientWidth, container.clientHeight),
   scene,
   camera,
 );
-outlinePass.edgeThickness = 1.0; // Thickness of the line
+outlinePass.edgeThickness = 6.0; // Thickness of the line
 outlinePass.edgeStrength = 10.0; // Crispness/opacity
+outlinePass.edgeGlow = 0;
+outlinePass.pulsePeriod = 10;
 outlinePass.visibleEdgeColor.set("#000000"); // Ink color
 outlinePass.hiddenEdgeColor.set("#000000"); // Outline even if blocked by objects
 composer.addPass(outlinePass);
@@ -90,7 +93,6 @@ scene.add(ambientLight);
 
 const dirLight = new THREE.DirectionalLight(0xffffff, 2.3);
 dirLight.position.set(5, 5, 4);
-dirLight.castShadow = true;
 scene.add(dirLight);
 
 // --- CREATE CHARACTER ROOT & LOAD OBJ ---
@@ -104,15 +106,17 @@ const objPath = "models/lemon.obj";
 loader.load(
   objPath,
   (obj) => {
+    const outlineTargets = [];
     obj.traverse((child) => {
       if (child.isMesh) {
         child.material = lemonMaterial;
-        child.castShadow = true;
+        // child.castShadow = true;
+        outlineTargets.push(child);
       }
     });
     obj.rotateX(30);
-    outlinePass.selectedObjects = [obj];
     characterGroup.add(obj);
+    outlinePass.selectedObjects = outlineTargets;
   },
   undefined,
   (error) => {
