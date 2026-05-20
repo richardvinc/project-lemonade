@@ -50,7 +50,9 @@ const mouthImages = [
 // --- SETUP THREE.JS SCENE ---
 const container = document.getElementById("canvas-container");
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#fff8d2");
+
+// outlinePass won't show if we use scene background
+scene.background = null;
 const width = container.clientWidth;
 const height = container.clientHeight;
 
@@ -77,10 +79,8 @@ const outlinePass = new OutlinePass(
   scene,
   camera,
 );
-outlinePass.edgeThickness = 6.0; // Thickness of the line
-outlinePass.edgeStrength = 10.0; // Crispness/opacity
-outlinePass.edgeGlow = 0;
-outlinePass.pulsePeriod = 10;
+outlinePass.edgeThickness = 3.0; // Thickness of the line
+outlinePass.edgeStrength = 1000.0; // Crispness/opacity
 outlinePass.visibleEdgeColor.set("#000000"); // Ink color
 outlinePass.hiddenEdgeColor.set("#000000"); // Outline even if blocked by objects
 composer.addPass(outlinePass);
@@ -315,10 +315,37 @@ function resizeRenderer() {
 
 // screenshot function
 function takeScreenshot() {
-  // Make sure the latest frame is rendered before capture
+  // to make sure that we render the outlinePass,
+  // we render the gradient first, then we add the object on top
   composer.render();
 
-  const dataURL = renderer.domElement.toDataURL("image/png");
+  const sourceCanvas = renderer.domElement;
+
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = sourceCanvas.width;
+  exportCanvas.height = sourceCanvas.height;
+
+  const ctx = exportCanvas.getContext("2d");
+
+  const gradient = ctx.createRadialGradient(
+    0,
+    0,
+    0,
+    0,
+    0,
+    Math.max(exportCanvas.width, exportCanvas.height),
+  );
+
+  gradient.addColorStop(0, "#ffffff");
+  gradient.addColorStop(0.3, "#ffffff");
+  gradient.addColorStop(1, "#fff8d2");
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+  ctx.drawImage(sourceCanvas, 0, 0);
+
+  const dataURL = exportCanvas.toDataURL("image/png");
 
   const link = document.createElement("a");
   link.href = dataURL;
@@ -376,7 +403,7 @@ let copyrightText;
 async function initCopyrightText() {
   await loadFonts();
 
-  copyrightText = createTextPlane(`Project Lemonade by Manoosia.com`);
+  copyrightText = createTextPlane(`Project Lemonade`);
   scene.add(copyrightText);
 
   positionCopyrightText();
