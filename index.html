@@ -6,13 +6,21 @@
         <link href="style.css" rel="stylesheet" />
     </head>
     <body>
-        <div class="relative h-screen w-full overflow-hidden bg-black">
+        <div class="relative h-screen w-full overflow-hidden bg-white">
             <canvas id="three-canvas" class="block h-full w-full"></canvas>
 
             <div
-                class="pointer-events-none absolute inset-0 flex items-center justify-center"
+                id="rotation-ui"
+                class="absolute bottom-5 right-5 z-10 flex flex-col gap-2 rounded-lg bg-black/70 p-4 font-mono text-sm text-white shadow-lg pointer-events-none"
             >
-                <h1 class="text-sm font-bold text-white">Three.js Scene</h1>
+                <!-- Action Button -->
+                <button
+                    type="button"
+                    id="toggle-cam-btn"
+                    class="mt-2 rounded bg-emerald-500 px-3 py-1.5 font-sans font-bold text-white transition-colors hover:bg-emerald-600 active:bg-emerald-700 pointer-events-auto cursor-pointer"
+                >
+                    Stop Animation
+                </button>
             </div>
         </div>
         <script type="module" src="/main.js"></script>
