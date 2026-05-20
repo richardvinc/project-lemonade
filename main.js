@@ -55,9 +55,12 @@ const width = container.clientWidth;
 const height = container.clientHeight;
 
 const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-camera.position.set(0, 0.4, 5);
+camera.position.set(0, 0, 5);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  preserveDrawingBuffer: true,
+});
 renderer.setSize(container.clientWidth, container.clientHeight, false);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
@@ -167,7 +170,7 @@ function changeMouthTexture(url) {
   });
 }
 
-// --- 6. DYNAMIC UI GENERATION FROM FOLDERS ---
+// --- DYNAMIC UI GENERATION FROM FOLDERS ---
 const eyeGrid = document.getElementById("eye-grid");
 eyeImages.forEach((eye, index) => {
   const btn = document.createElement("button");
@@ -240,7 +243,7 @@ if (mouthImages.length > 0) {
   changeMouthTexture(mouthImages[0].url);
 }
 
-// --- 7. INTERACTION & EVENT LISTENERS ---
+// --- INTERACTION & EVENT LISTENERS ---
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 
@@ -283,7 +286,7 @@ container.addEventListener("pointermove", (e) => {
 
   camera.position.x = radius * Math.sin(theta);
   camera.position.z = radius * Math.cos(theta);
-  camera.lookAt(0, 0.4, 0);
+  camera.lookAt(0, 0, 0);
 
   previousMousePosition = { x: e.clientX, y: e.clientY };
 });
@@ -300,14 +303,114 @@ function resizeRenderer() {
   renderer.setSize(width, height, false);
   composer.setSize(width, height);
   outlinePass.setSize(width, height);
+
+  if (copyrightText) {
+    positionCopyrightText();
+  }
 }
 
-// --- 8. ANIMATION LOOP ---
+// screenshot function
+function takeScreenshot() {
+  // Make sure the latest frame is rendered before capture
+  composer.render();
+
+  const dataURL = renderer.domElement.toDataURL("image/png");
+
+  const link = document.createElement("a");
+  link.href = dataURL;
+  link.download = `project-lemonade-${Date.now()}.png`;
+  link.click();
+}
+
+document
+  .getElementById("btn-screenshot")
+  .addEventListener("click", takeScreenshot);
+
+// bottom text
+async function loadFonts() {
+  await document.fonts.load("600 32px Poppins");
+  await document.fonts.ready;
+}
+
+function createTextPlane(text) {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  const pixelRatio = window.devicePixelRatio || 1;
+
+  canvas.width = 1024 * pixelRatio;
+  canvas.height = 128 * pixelRatio;
+
+  ctx.scale(pixelRatio, pixelRatio);
+  ctx.clearRect(0, 0, 1024, 128);
+
+  ctx.font = "600 24px Poppins, Arial, sans-serif";
+  ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.fillText(text, 512, 64);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+  });
+
+  const geometry = new THREE.PlaneGeometry(3.2, 0.4);
+  const mesh = new THREE.Mesh(geometry, material);
+
+  return mesh;
+}
+
+let copyrightText;
+
+async function initCopyrightText() {
+  await loadFonts();
+
+  copyrightText = createTextPlane(`Project Lemonade by Manoosia.com`);
+  scene.add(copyrightText);
+
+  positionCopyrightText();
+}
+
+initCopyrightText();
+
+function positionCopyrightText() {
+  const distance = 4;
+
+  const vFov = THREE.MathUtils.degToRad(camera.fov);
+  const visibleHeight = 2 * Math.tan(vFov / 2) * distance;
+  const visibleWidth = visibleHeight * camera.aspect;
+
+  copyrightText.position.set(
+    0,
+    -visibleHeight / 2 + 0.25,
+    camera.position.z - distance,
+  );
+  copyrightText.scale.set(
+    Math.min(1, visibleWidth / 4),
+    Math.min(1, visibleWidth / 4),
+    1,
+  );
+
+  copyrightText.lookAt(camera.position);
+}
+
+// --- ANIMATION LOOP ---
+const resizeObserver = new ResizeObserver(resizeRenderer);
+resizeObserver.observe(container);
+
 function animate() {
   requestAnimationFrame(animate);
+  if (copyrightText) {
+    copyrightText.lookAt(camera.position);
+  }
   composer.render(scene, camera);
 }
 resizeRenderer();
-const resizeObserver = new ResizeObserver(resizeRenderer);
-resizeObserver.observe(container);
 animate();
