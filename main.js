@@ -55,7 +55,7 @@ const width = container.clientWidth;
 const height = container.clientHeight;
 
 const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-camera.position.set(0, 0, 5);
+camera.position.set(0, 0.4, 5);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(container.clientWidth, container.clientHeight, false);
@@ -283,7 +283,7 @@ container.addEventListener("pointermove", (e) => {
 
   camera.position.x = radius * Math.sin(theta);
   camera.position.z = radius * Math.cos(theta);
-  camera.lookAt(0, 0, 0);
+  camera.lookAt(0, 0.4, 0);
 
   previousMousePosition = { x: e.clientX, y: e.clientY };
 });
