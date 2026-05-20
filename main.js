@@ -79,7 +79,7 @@ const outlinePass = new OutlinePass(
   scene,
   camera,
 );
-outlinePass.edgeThickness = 3.0; // Thickness of the line
+outlinePass.edgeThickness = 2.0; // Thickness of the line
 outlinePass.edgeStrength = 1000.0; // Crispness/opacity
 outlinePass.visibleEdgeColor.set("#000000"); // Ink color
 outlinePass.hiddenEdgeColor.set("#000000"); // Outline even if blocked by objects
@@ -91,7 +91,7 @@ container.appendChild(renderer.domElement);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
-const dirLight = new THREE.DirectionalLight(0xffffff, 2.3);
+const dirLight = new THREE.DirectionalLight(0xffffff, 3);
 dirLight.position.set(5, 5, 4);
 scene.add(dirLight);
 
